@@ -1,5 +1,6 @@
 .stockListContainer{
-	width: 220px;
+	margin: 100px;
+	width: 350px;
 	float: left;
 
 }
@@ -47,4 +48,10 @@
 }
 .invalidStock .hidden{
 	visibility: hidden;
+}
+.stockremove{
+	background-color: #B02B2B;
+	border-radius: 7px;
+	font-weight: 800;
+	color: white;
 }
