@@ -1,16 +1,16 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var db = require('../database/index');
-
 var session = require('express-session')
 
 var app = express();
-console.log('Hi server');
+
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+
 app.use(session({
 	 secret: 'keyboard cat',
 	 resave: false,
@@ -22,7 +22,9 @@ app.use(session({
 app.use(verifySession,express.static(__dirname + '/../client/dist'));
 
 function verifySession(req, res, next){
-	if(req.url.startsWith("/login")){
+	if(req.url.startsWith("login.html") || req.url.endsWith("css")){
+		next();
+	}else if(req.url.startsWith("/login")){
 		next();
 	}else if(req.url.startsWith("/signup")){
 		next();
@@ -34,20 +36,7 @@ function verifySession(req, res, next){
 }
 
 app.get('/login', function(request, response){
-	response.status(200).send('<form method="post" action="/login">' +
-  '<p>' +
-    '<label>Username:</label>' +
-    '<input type="text" name="username">' +
-  '</p>' +
-  '<p>' +
-    '<label>Password:</label>' +
-    '<input type="text" name="password">' +
-  '</p>' +
-  '<p>' +
-    '<input type="submit" value="Login">' +
-  '</p>' +
-  '</form>');
-
+	response.redirect('login.html#login');
 });
 
 app.post('/login', function(request, response){
@@ -70,20 +59,7 @@ app.post('/login', function(request, response){
 
 
 app.get('/signup', function(request, response){
-	response.status(200).send('<form method="post" action="/signup">' +
-  '<p>' +
-    '<label>Username:</label>' +
-    '<input type="text" name="username">' +
-  '</p>' +
-  '<p>' +
-    '<label>Password:</label>' +
-    '<input type="text" name="password">' +
-  '</p>' +
-  '<p>' +
-    '<input type="submit" value="Signup">' +
-  '</p>' +
-  '</form>');
-
+	response.redirect('login.html#signup');
 });
 
 app.post('/signup', function(request, response){
@@ -111,29 +87,34 @@ app.post('/signup', function(request, response){
  	response.redirect('/login');
 })
 
-// app.post('/stocks/add', function(request, res){
-// 	// db.collection.insertOne ({
-// 	//     symbol: "AAPL",
-// 	// 	AverageDailyVolume: "25228300",
-// 	// 	Change_PercentChange: "-0.14 - -0.10%",
-// 	// 	DaysLow: "143.27",
-// 	// 	DaysHigh: "144.30",
-// 	// 	YearLow: "143.27",
-// 	// 	YearHigh: "145.46"
-// 	// })
-	
-// });
+app.post('/stocks/add', function(req, res){
+	db.Stocks.findOneAndUpdate(
+	   { username: req.session.user},
+	    { $push: { stocks: req.body.stock } },
+	    function(err, data) {
+	        console.log(err);
+	});
+	res.status(201).send("success");
+});
 
 app.get('/stocks', function(req, res){
-  console.log('request method '+ req.method + ' request url ' + req.url);
-  console.log('request body', req.session.user);
-  var newData = [];
   db.Stocks.findOne({ username: req.session.user}, function(err, stockList){
   	if(stockList){
   		res.status(200).send(JSON.stringify(stockList.stocks));
   	}
   });
 });
+
+app.delete('/stocks', function(req, res){
+	db.Stocks.findOneAndUpdate(
+	    { username: req.session.user},
+	    { $pull: { stocks: req.body.stock } },
+	    function(err, data) {
+	        console.log(err);
+	});
+	res.status(202).send("success - marked for deletion");
+
+})
 
 var port = 1128;
 app.listen(port, function(){

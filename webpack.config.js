@@ -2,13 +2,9 @@ var path = require('path');
 var SRC_DIR = path.join(__dirname, '/client/src');
 var DIST_DIR = path.join(__dirname, '/client/dist');
 
-module.exports = {
-  entry: `${SRC_DIR}/index.jsx`,
-  output: {
-    filename: 'bundle.js',
-    path: DIST_DIR
-  },
-  module : {
+var config = {
+    // TODO: Add common Configuration
+    module: {
     loaders : [
       {
         test : /\.jsx?/,
@@ -19,11 +15,27 @@ module.exports = {
         }
       }
     ]
-  },
-  // plugins: [
-  //       new webpack.ProvidePlugin({
-  //          $: "jquery",
-  //          jQuery: "jquery"
-  //      })
-  //   ]
+  }
 };
+
+var stockConfig = Object.assign({}, config, {
+    name: "stock",
+    entry: `${SRC_DIR}/stock/index.jsx`,
+    output: {
+      filename: 'stock-bundle.js',
+      path: DIST_DIR
+    },
+});
+var loginConfig = Object.assign({}, config,{
+    name: "login",
+    entry: `${SRC_DIR}/login/index.jsx`,
+    output: {
+      filename: 'login-bundle.js',
+      path: DIST_DIR
+    },
+});
+
+// Return Array of Configurations
+module.exports = [
+    stockConfig, loginConfig,     
+];

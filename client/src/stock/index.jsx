@@ -12,33 +12,49 @@ class App extends React.Component {
   	constructor(props) {
 	    super(props);
 	    this.state ={
-	    	stockInput: this.props.stocks,
+	    	stockInput: [],
 	    	stocks:[] ,
 	    	selectedStock: '',
-	    	term: ''
-	    }
+	    	refresh: this.props.refresh || false
+	    		    }
    	}
 
 	componentWillMount() {
-		$.get('http://127.0.0.1:1128/stocks', function(response){
-			console.log("response from server", response);
-		})
 		this.refreshData();
+	}
+
+	 componentDidMount() {
+	    var context=this;
+	    if(this.state.refresh){
+	      setTimeout(function(){
+	        context.refreshData()}
+	                 ,20000);
+	    }
+	  }
+
+	refreshData(){
+		var context = this;
+		$.get('http://127.0.0.1:1128/stocks', function(response){
+			context.setState({
+				stockInput: JSON.parse(response)
+			});
+			context.getStockInfo();
+		});	
 
 	}
 
-	refreshData(){
+	getStockInfo(){
 		var url = 'https://query.yahooapis.com/v1/public/yql?q=select%20%2a%20from%20yahoo.finance.quotes%20where%20symbol%20in%20%28%22' + this.state.stockInput.toString() + '%22%29&env=store://datatables.org/alltableswithkeys&format=json';
 		var context = this;
 		$.get(url, function(response){
-			var stocklist = response.query.results.quote;
+			var stocklist = [].concat(response.query.results.quote);
 			context.setState({
 				stocks: stocklist,
-				selectedStock:stocklist[1]
+				selectedStock:stocklist[0]
 				});
 		});
-		
-	} 
+
+	}
 
 	handleStockEntryListClick(stock){
 		this.setState({
@@ -60,24 +76,23 @@ class App extends React.Component {
 	}
 
 	removeStock(stockName){
-		console.log('stockData - Remove Stock', this.state.term);
-		var newStocks = context.state.stocks;
-		var newStockInput = context.state.stockInput;
-		var index = newStockInput.indexOf(stockName);
-		if(	index !== -1){
-			newStocks.splice(index, 1);
-			newStockInput.splice(index, 1);
-		}
-		this.setState({
-			stocks: newStocks,
-			stockInput: newStockInput
+		var context = this;
+		$.ajax({
+		    url: 'http://127.0.0.1:1128/stocks',
+		    type: 'DELETE',
+		    data: {stock: stockName},
+		    success: function(result) {
+		        context.refreshData()
+		    }
 		});
 	}
   
   render(){
     return(
     	<div>
-	    	<h1>Stock Watchlist</h1>
+    		<div className="header">
+    		<div>Stock Watch List</div>
+    		</div>
 	    	<div className="addStocks">
 				<AddStock updateStock={this.updateNewStock.bind(this)}/>
 	    	</div>
@@ -90,6 +105,5 @@ class App extends React.Component {
     	</div>);
   }
 }
-var stocks = ['AAPL','GOOG', 'FB', 'NFLX', 'TWTR', 'MSFT', 'SNAP'];
 
-ReactDOM.render( <App stocks = {stocks}/>, document.getElementById("app"));
+ReactDOM.render(<App refresh={true}/>,document.getElementById('app'));
